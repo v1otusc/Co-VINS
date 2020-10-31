@@ -1,3 +1,7 @@
+# CHANGE-LOG
+
+2020/11/1--zzh：增加小觅s相机（鱼眼相机 MEI 模型）配置文件，改写主从机launch文件，注释去掉从机发布图像到主机功能
+
 # Co-VINS
 ## Collaborative Localization for Multiple Monocular Visual-Inertial Systems
 
