@@ -15,7 +15,8 @@ vector<uchar> r_status;
 vector<float> r_err;
 queue<sensor_msgs::ImageConstPtr> img_buf;
 
-ros::Publisher pub_img,pub_match;
+ros::Publisher pub_img;
+// ros::Publisher pub_match;
 ros::Publisher pub_restart;
 
 FeatureTracker trackerData[NUM_OF_CAM];
@@ -197,7 +198,7 @@ void img_callback(const sensor_msgs::ImageConstPtr &img_msg)
             }
             //cv::imshow("vis", stereo_img);
             //cv::waitKey(5);
-            pub_match.publish(ptr->toImageMsg());
+            //pub_match.publish(ptr->toImageMsg());
         }
     }
     ROS_INFO("whole feature tracker processing costs: %f", t_r.toc());
@@ -231,7 +232,7 @@ int main(int argc, char **argv)
     ros::Subscriber sub_img = n.subscribe(IMAGE_TOPIC, 100, img_callback);
 
     pub_img = n.advertise<sensor_msgs::PointCloud>("feature_tracker/feature", 1000);
-    pub_match = n.advertise<sensor_msgs::Image>("feature_tracker/feature_img",1000);
+    // pub_match = n.advertise<sensor_msgs::Image>("feature_tracker/feature_img",1000);
     pub_restart = n.advertise<std_msgs::Bool>("feature_tracker/restart",1000);
     /*
     if (SHOW_TRACK)
