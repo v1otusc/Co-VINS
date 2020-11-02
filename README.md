@@ -1,5 +1,7 @@
 # CHANGE-LOG
 
+2020/11/02--zzh：添加开机启动脚本，具体方法[https://blog.csdn.net/hcx25909/article/details/9068497](https://blog.csdn.net/hcx25909/article/details/9068497)，脚本内容参考 start_covins_agent.sh / start_covins_master.sh
+
 2020/11/01--lsz：改写三角化--/vins_estimator/src/feature_manager.cpp + feature_manager.h
 
 2020/11/01--zzh：增加小觅s相机（鱼眼相机 MEI 模型）配置文件，改写主从机launch文件，注释去掉从机发布图像到主机功能
