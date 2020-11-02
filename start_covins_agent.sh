@@ -1,4 +1,4 @@
-#！/bin/bash
+#!/bin/bash
 # open mynteye camera: modified file path plz
 cd /home/nvidia/MYNT-EYE-S-SDK-master/wrappers/ros/
 source ./devel/setup.bash
