@@ -39,24 +39,24 @@ public:
 	PoseGraph();
 	~PoseGraph();
 	void registerPub(ros::NodeHandle &n);
-	void addAgentFrame(KeyFrame* cur_kf);
-	void loadKeyFrame(KeyFrame* cur_kf);
+	void addAgentFrame(KeyFrame *cur_kf);
+	void loadKeyFrame(KeyFrame *cur_kf);
 	void loadVocabulary(std::string voc_path);
-	KeyFrame* getKeyFrame(int index);
+	KeyFrame *getKeyFrame(int index);
 	nav_msgs::Path path[10];
 	nav_msgs::Path base_path;
-	CameraPoseVisualization* posegraph_visualization;
+	CameraPoseVisualization *posegraph_visualization;
 	void savePoseGraph();
 	void loadPoseGraph();
 	void publish();
 	void publishTF();
 
 private:
-	int detectLoop(KeyFrame* keyframe, int frame_index);
-	void addKeyFrameIntoVoc(KeyFrame* keyframe);
+	int detectLoop(KeyFrame *keyframe, int frame_index);
+	void addKeyFrameIntoVoc(KeyFrame *keyframe);
 	void optimize4DoF();
 	void updatePath();
-	list<KeyFrame*> keyframelist;
+	list<KeyFrame *> keyframelist;
 	std::mutex m_keyframelist;
 	std::mutex m_optimize_buf;
 	std::mutex m_path;
@@ -69,9 +69,9 @@ private:
 	vector<bool> sequence_loop;
 	map<int, cv::Mat> image_pool;
 	int earliest_loop_index;
-	
+
 	BriefDatabase db;
-	BriefVocabulary* voc;
+	BriefVocabulary *voc;
 
 	ros::Publisher pub_pg_path;
 	ros::Publisher pub_base_path;
@@ -85,45 +85,47 @@ private:
 	map<int, Eigen::Vector3d> sequence_w_t_s_map;
 	map<int, Eigen::Matrix3d> sequence_r_drift_map;
 	map<int, Eigen::Matrix3d> sequence_w_r_s_map;
-	vector<KeyFrame*> keyframe_vec;
+	vector<KeyFrame *> keyframe_vec;
 };
 
 template <typename T>
-T NormalizeAngle(const T& angle_degrees) {
-  if (angle_degrees > T(180.0))
-  	return angle_degrees - T(360.0);
-  else if (angle_degrees < T(-180.0))
-  	return angle_degrees + T(360.0);
-  else
-  	return angle_degrees;
+T NormalizeAngle(const T &angle_degrees)
+{
+	if (angle_degrees > T(180.0))
+		return angle_degrees - T(360.0);
+	else if (angle_degrees < T(-180.0))
+		return angle_degrees + T(360.0);
+	else
+		return angle_degrees;
 };
 
-class AngleLocalParameterization {
- public:
+class AngleLocalParameterization
+{
+public:
+	template <typename T>
+	bool operator()(const T *theta_radians, const T *delta_theta_radians,
+									T *theta_radians_plus_delta) const
+	{
+		*theta_radians_plus_delta =
+				NormalizeAngle(*theta_radians + *delta_theta_radians);
 
-  template <typename T>
-  bool operator()(const T* theta_radians, const T* delta_theta_radians,
-                  T* theta_radians_plus_delta) const {
-    *theta_radians_plus_delta =
-        NormalizeAngle(*theta_radians + *delta_theta_radians);
+		return true;
+	}
 
-    return true;
-  }
-
-  static ceres::LocalParameterization* Create() {
-    return (new ceres::AutoDiffLocalParameterization<AngleLocalParameterization,
-                                                     1, 1>);
-  }
+	static ceres::LocalParameterization *Create()
+	{
+		return (new ceres::AutoDiffLocalParameterization<AngleLocalParameterization,
+																										 1, 1>);
+	}
 };
 
-template <typename T> 
+template <typename T>
 void YawPitchRollToRotationMatrix(const T yaw, const T pitch, const T roll, T R[9])
 {
 
 	T y = yaw / T(180.0) * T(M_PI);
 	T p = pitch / T(180.0) * T(M_PI);
 	T r = roll / T(180.0) * T(M_PI);
-
 
 	R[0] = cos(y) * cos(p);
 	R[1] = -sin(y) * cos(r) + cos(y) * sin(p) * sin(r);
@@ -136,7 +138,7 @@ void YawPitchRollToRotationMatrix(const T yaw, const T pitch, const T roll, T R[
 	R[8] = cos(p) * cos(r);
 };
 
-template <typename T> 
+template <typename T>
 void RotationMatrixTranspose(const T R[9], T inv_R[9])
 {
 	inv_R[0] = R[0];
@@ -150,7 +152,7 @@ void RotationMatrixTranspose(const T R[9], T inv_R[9])
 	inv_R[8] = R[8];
 };
 
-template <typename T> 
+template <typename T>
 void RotationMatrixRotatePoint(const T R[9], const T t[3], T r_t[3])
 {
 	r_t[0] = R[0] * t[0] + R[1] * t[1] + R[2] * t[2];
@@ -161,10 +163,10 @@ void RotationMatrixRotatePoint(const T R[9], const T t[3], T r_t[3])
 struct FourDOFError
 {
 	FourDOFError(double t_x, double t_y, double t_z, double relative_yaw, double pitch_i, double roll_i)
-				  :t_x(t_x), t_y(t_y), t_z(t_z), relative_yaw(relative_yaw), pitch_i(pitch_i), roll_i(roll_i){}
+			: t_x(t_x), t_y(t_y), t_z(t_z), relative_yaw(relative_yaw), pitch_i(pitch_i), roll_i(roll_i) {}
 
 	template <typename T>
-	bool operator()(const T* const yaw_i, const T* ti, const T* yaw_j, const T* tj, T* residuals) const
+	bool operator()(const T *const yaw_i, const T *ti, const T *yaw_j, const T *tj, T *residuals) const
 	{
 		T t_w_ij[3];
 		t_w_ij[0] = tj[0] - ti[0];
@@ -189,28 +191,28 @@ struct FourDOFError
 		return true;
 	}
 
-	static ceres::CostFunction* Create(const double t_x, const double t_y, const double t_z,
-									   const double relative_yaw, const double pitch_i, const double roll_i) 
+	static ceres::CostFunction *Create(const double t_x, const double t_y, const double t_z,
+																		 const double relative_yaw, const double pitch_i, const double roll_i)
 	{
-	  return (new ceres::AutoDiffCostFunction<
-	          FourDOFError, 4, 1, 3, 1, 3>(
-	          	new FourDOFError(t_x, t_y, t_z, relative_yaw, pitch_i, roll_i)));
+		return (new ceres::AutoDiffCostFunction<
+						FourDOFError, 4, 1, 3, 1, 3>(
+				new FourDOFError(t_x, t_y, t_z, relative_yaw, pitch_i, roll_i)));
 	}
 
 	double t_x, t_y, t_z;
 	double relative_yaw, pitch_i, roll_i;
-
 };
 
 struct FourDOFWeightError
 {
 	FourDOFWeightError(double t_x, double t_y, double t_z, double relative_yaw, double pitch_i, double roll_i)
-				  :t_x(t_x), t_y(t_y), t_z(t_z), relative_yaw(relative_yaw), pitch_i(pitch_i), roll_i(roll_i){
-				  	weight = 0.1;
-				  }
+			: t_x(t_x), t_y(t_y), t_z(t_z), relative_yaw(relative_yaw), pitch_i(pitch_i), roll_i(roll_i)
+	{
+		weight = 0.1;
+	}
 
 	template <typename T>
-	bool operator()(const T* const yaw_i, const T* ti, const T* yaw_j, const T* tj, T* residuals) const
+	bool operator()(const T *const yaw_i, const T *ti, const T *yaw_j, const T *tj, T *residuals) const
 	{
 		T t_w_ij[3];
 		t_w_ij[0] = tj[0] - ti[0];
@@ -235,16 +237,15 @@ struct FourDOFWeightError
 		return true;
 	}
 
-	static ceres::CostFunction* Create(const double t_x, const double t_y, const double t_z,
-									   const double relative_yaw, const double pitch_i, const double roll_i) 
+	static ceres::CostFunction *Create(const double t_x, const double t_y, const double t_z,
+																		 const double relative_yaw, const double pitch_i, const double roll_i)
 	{
-	  return (new ceres::AutoDiffCostFunction<
-	          FourDOFWeightError, 4, 1, 3, 1, 3>(
-	          	new FourDOFWeightError(t_x, t_y, t_z, relative_yaw, pitch_i, roll_i)));
+		return (new ceres::AutoDiffCostFunction<
+						FourDOFWeightError, 4, 1, 3, 1, 3>(
+				new FourDOFWeightError(t_x, t_y, t_z, relative_yaw, pitch_i, roll_i)));
 	}
 
 	double t_x, t_y, t_z;
 	double relative_yaw, pitch_i, roll_i;
 	double weight;
-
 };
