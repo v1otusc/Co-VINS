@@ -22,7 +22,7 @@ void PoseGraph::registerPub(ros::NodeHandle &n)
   pub_pg_path = n.advertise<nav_msgs::Path>("pose_graph_path", 1000);
   pub_base_path = n.advertise<nav_msgs::Path>("base_path", 1000);
   pub_pose_graph = n.advertise<visualization_msgs::MarkerArray>("pose_graph", 1000);
-  for (int i = 0; i < 7; i++)
+  for (int i = 0; i < 7; i++) 
     pub_path[i] = n.advertise<nav_msgs::Path>("path_" + to_string(i), 1000);
 }
 
@@ -382,7 +382,7 @@ int PoseGraph::detectLoop(KeyFrame *keyframe, int frame_index)
         cv::imshow("loop_result", loop_result);
         cv::waitKey(20);
     }
-*/
+  */ 
   if (find_loop && frame_index > 10)
   {
     int min_index = -1;
@@ -420,15 +420,17 @@ void PoseGraph::optimize4DoF()
     m_optimize_buf.unlock();
     if (cur_index != -1)
     {
-      //printf("optimize pose graph %d --- %d \n", first_looped_index, cur_index);
+      //printf("optimize pose graph \n");
       TicToc tmp_t;
       m_keyframelist.lock();
+      KeyFrame *cur_kf = getKeyFrame(cur_index);
       int max_length = cur_index + 1;
-
       // w^t_i   w^q_i
       double t_array[max_length][3];
-      Quaterniond q_array[max_length];
-      double euler_array[max_length][3];
+      double q_array[max_length][4];
+      //无  Quaterniond q_array[max_length];
+      //旋转数组，其中存放每个关键帧的旋转四元数
+      //double sequence_array[max_length];
 
       ceres::Problem problem;
       ceres::Solver::Options options;
@@ -440,8 +442,7 @@ void PoseGraph::optimize4DoF()
       ceres::LossFunction *loss_function;
       loss_function = new ceres::HuberLoss(0.1);
       //loss_function = new ceres::CauchyLoss(1.0);
-      ceres::LocalParameterization *angle_local_parameterization =
-          AngleLocalParameterization::Create();
+      ceres::LocalParameterization *local_parameterization = new ceres::QuaternionParameterization();
 
       map<int, int> last_sequence_index;
       int i = 0;
@@ -459,42 +460,40 @@ void PoseGraph::optimize4DoF()
         t_array[i][0] = tmp_t(0);
         t_array[i][1] = tmp_t(1);
         t_array[i][2] = tmp_t(2);
-        q_array[i] = tmp_q;
 
-        Vector3d euler_angle = Utility::R2ypr(tmp_q.toRotationMatrix());
-        euler_array[i][0] = euler_angle.x();
-        euler_array[i][1] = euler_angle.y();
-        euler_array[i][2] = euler_angle.z();
+        q_array[i][0] = tmp_q.w(); 
+        q_array[i][1] = tmp_q.x();
+        q_array[i][2] = tmp_q.y();
+        q_array[i][3] = tmp_q.z();
 
-        problem.AddParameterBlock(euler_array[i], 1, angle_local_parameterization);
+        problem.AddParameterBlock(q_array[i], 4, local_parameterization); 
         problem.AddParameterBlock(t_array[i], 3);
 
         if (!fix_first && (it)->sequence == first_sequence)
         {
           fix_first = true;
-          problem.SetParameterBlockConstant(euler_array[i]);
+          problem.SetParameterBlockConstant(q_array[i]); 
           problem.SetParameterBlockConstant(t_array[i]);
         }
 
         //add edge
         int prev_index = i - 1;
-        for (int n = 0; n < 5; n++)
+        for (int n = 0; n < 5; n++) 
         {
           while (prev_index >= first_looped_index)
           {
             if (keyframe_vec[prev_index]->sequence == it->sequence)
             {
               int local_prev_index = keyframe_vec[prev_index]->local_index;
-              Vector3d euler_conncected = Utility::R2ypr(q_array[local_prev_index].toRotationMatrix());
               Vector3d relative_t(t_array[i][0] - t_array[local_prev_index][0], t_array[i][1] - t_array[local_prev_index][1], t_array[i][2] - t_array[local_prev_index][2]);
-              relative_t = q_array[local_prev_index].inverse() * relative_t;
-              double relative_yaw = euler_array[i][0] - euler_array[local_prev_index][0];
-              ceres::CostFunction *cost_function = FourDOFError::Create(relative_t.x(), relative_t.y(), relative_t.z(),
-                                                                        relative_yaw, euler_conncected.y(), euler_conncected.z());
-              problem.AddResidualBlock(cost_function, NULL, euler_array[local_prev_index],
-                                       t_array[local_prev_index],
-                                       euler_array[i],
-                                       t_array[i]);
+              Quaterniond q_i_j = Quaterniond(q_array[local_prev_index][0], q_array[local_prev_index][1], q_array[local_prev_index][2], q_array[local_prev_index][3]);
+              Quaterniond q_i = Quaterniond(q_array[i][0], q_array[i][1], q_array[i][2], q_array[i][3]);
+              relative_t = q_i_j.inverse() * relative_t;
+              Quaterniond relative_q = q_i_j.inverse() * q_i;
+              ceres::CostFunction *vo_function = RelativeRTError::Create(relative_t.x(), relative_t.y(), relative_t.z(),
+                                                                         relative_q.w(), relative_q.x(), relative_q.y(), relative_q.z(),
+                                                                         0.1, 0.01);
+              problem.AddResidualBlock(vo_function, NULL, q_array[local_prev_index], t_array[local_prev_index], q_array[i], t_array[i]);
 
               prev_index--;
               break;
@@ -505,21 +504,18 @@ void PoseGraph::optimize4DoF()
 
         //add loop edge
         if ((it)->has_loop && sequence_align_world[(it)->sequence] == 1 &&
-            sequence_align_world[getKeyFrame((it)->loop_index)->sequence] == 1)
+            sequence_align_world[getKeyFrame((it)->loop_index)->sequence] == 1) //different 4dof
         {
-          //printf("add loop edge %d---%d\n",(it)->index, (it)->loop_index);
           assert((it)->loop_index >= first_looped_index);
           int connected_index = getKeyFrame((it)->loop_index)->local_index;
-          Vector3d euler_conncected = Utility::R2ypr(q_array[connected_index].toRotationMatrix());
           Vector3d relative_t;
           relative_t = (it)->getLoopRelativeT();
-          double relative_yaw = (it)->getLoopRelativeYaw();
-          ceres::CostFunction *cost_function = FourDOFWeightError::Create(relative_t.x(), relative_t.y(), relative_t.z(),
-                                                                          relative_yaw, euler_conncected.y(), euler_conncected.z());
-          problem.AddResidualBlock(cost_function, loss_function, euler_array[connected_index],
-                                   t_array[connected_index],
-                                   euler_array[i],
-                                   t_array[i]);
+          Quaterniond relative_q;
+          relative_q = (it)->getLoopRelativeQ();
+          ceres::CostFunction *loop_function = RelativeRTError::Create(relative_t.x(), relative_t.y(), relative_t.z(),
+                                                                       relative_q.w(), relative_q.x(), relative_q.y(), relative_q.z(),
+                                                                       0.1, 0.01);
+          problem.AddResidualBlock(loop_function, loss_function, q_array[connected_index], t_array[connected_index], q_array[i], t_array[i]);
         }
 
         if ((it)->index == cur_index)
@@ -532,12 +528,12 @@ void PoseGraph::optimize4DoF()
       //std::cout << summary.BriefReport() << "\n";
 
       //printf("pose optimization time: %f \n", tmp_t.toc());
-      /*
-            for (int j = 0 ; j < i; j++)
-            {
-                printf("optimize i: %d p: %f, %f, %f\n", j, t_array[j][0], t_array[j][1], t_array[j][2] );
-            }
-            */
+      //
+      //for (int j = 0 ; j < i; j++)
+      //{
+      //     printf("optimize i: %d p: %f, %f, %f\n", j, t_array[j][0], t_array[j][1], t_array[j][2] );
+      // }
+      //
       m_keyframelist.lock();
       i = 0;
       size_t k = 0;
@@ -546,12 +542,10 @@ void PoseGraph::optimize4DoF()
         KeyFrame *it = keyframe_vec[k];
         if ((it)->index < first_looped_index)
           continue;
-        Quaterniond tmp_q;
-        tmp_q = Utility::ypr2R(Vector3d(euler_array[i][0], euler_array[i][1], euler_array[i][2]));
+        Quaterniond tmp_q(q_array[i][0], q_array[i][1], q_array[i][2], q_array[i][3]); //                   different 4dof
         Vector3d tmp_t = Vector3d(t_array[i][0], t_array[i][1], t_array[i][2]);
         Matrix3d tmp_r = tmp_q.toRotationMatrix();
         (it)->updatePose(tmp_t, tmp_r);
-
         if ((it)->index == cur_index)
           break;
         i++;
@@ -569,11 +563,9 @@ void PoseGraph::optimize4DoF()
         kf->getPose(cur_t, cur_r);
         kf->getVioPose(vio_t, vio_r);
         m_drift.lock();
-        double yaw_drift = Utility::R2ypr(cur_r).x() - Utility::R2ypr(vio_r).x();
-        sequence_r_drift_map[sequence] = Utility::ypr2R(Vector3d(yaw_drift, 0, 0));
+        sequence_r_drift_map[sequence] = cur_r * vio_r.transpose();
         sequence_t_drift_map[sequence] = cur_t - sequence_r_drift_map[sequence] * vio_t;
         m_drift.unlock();
-        //printf("sequence %d t drift %f %f %f", sequence, sequence_t_drift_map[sequence].x(), sequence_t_drift_map[sequence].y(), sequence_t_drift_map[sequence].z());
       }
 
       // update new poses
