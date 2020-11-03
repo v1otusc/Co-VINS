@@ -357,18 +357,18 @@ int PoseGraph::detectLoop(KeyFrame *keyframe, int frame_index)
   //first query; then add this frame into database!
   QueryResults ret;
   TicToc t_query;
-  db.query(keyframe->feature_des, ret, 4, frame_index - 30);
+  db.query(keyframe->feature_des, ret, 4, frame_index - 50);
   //printf("query time: %f", t_query.toc());
   //cout << "Searching for Image " << frame_index << ". " << ret << endl;
 
   TicToc t_add;
   db.add(keyframe->feature_des);
   //printf("add feature time: %f", t_add.toc());
-  // ret[0] is the nearest neighbour's score. threshold change with neighour score
   bool find_loop = false;
   cv::Mat loop_result;
 
-  // a good match with its nerghbour
+  // a good match with its nearest neighbour's score
+  // ret[0] is the nearest neighbour's score. threshold change with neighour score
   if (ret.size() >= 1 && ret[0].Score > 0.1)
     for (unsigned int i = 1; i < ret.size(); i++)
     {
@@ -383,7 +383,7 @@ int PoseGraph::detectLoop(KeyFrame *keyframe, int frame_index)
         cv::waitKey(20);
     }
   */ 
-  if (find_loop && frame_index > 10)
+  if (find_loop && frame_index > 50)
   {
     int min_index = -1;
     for (unsigned int i = 0; i < ret.size(); i++)
@@ -542,7 +542,7 @@ void PoseGraph::optimize4DoF()
         KeyFrame *it = keyframe_vec[k];
         if ((it)->index < first_looped_index)
           continue;
-        Quaterniond tmp_q(q_array[i][0], q_array[i][1], q_array[i][2], q_array[i][3]); //                   different 4dof
+        Quaterniond tmp_q(q_array[i][0], q_array[i][1], q_array[i][2], q_array[i][3]); 
         Vector3d tmp_t = Vector3d(t_array[i][0], t_array[i][1], t_array[i][2]);
         Matrix3d tmp_r = tmp_q.toRotationMatrix();
         (it)->updatePose(tmp_t, tmp_r);
@@ -620,7 +620,7 @@ void PoseGraph::updatePath()
     (it)->getPose(P, R);
     Quaterniond Q;
     Q = R;
-    //        printf("path p: %f, %f, %f\n",  P.x(),  P.z(),  P.y() );
+    //printf("path p: %f, %f, %f\n",  P.x(),  P.z(),  P.y() );
 
     geometry_msgs::PoseStamped pose_stamped;
     pose_stamped.header.stamp = ros::Time((it)->time_stamp);
