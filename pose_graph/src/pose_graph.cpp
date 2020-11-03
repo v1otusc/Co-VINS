@@ -357,7 +357,7 @@ int PoseGraph::detectLoop(KeyFrame *keyframe, int frame_index)
   //first query; then add this frame into database!
   QueryResults ret;
   TicToc t_query;
-  db.query(keyframe->feature_des, ret, 4, frame_index - 50);
+  db.query(keyframe->feature_des, ret, 4, frame_index - 30);
   //printf("query time: %f", t_query.toc());
   //cout << "Searching for Image " << frame_index << ". " << ret << endl;
 
@@ -369,11 +369,11 @@ int PoseGraph::detectLoop(KeyFrame *keyframe, int frame_index)
 
   // a good match with its nearest neighbour's score
   // ret[0] is the nearest neighbour's score. threshold change with neighour score
-  if (ret.size() >= 1 && ret[0].Score > 0.1)
+  if (ret.size() >= 1 && ret[0].Score > 0.05)
     for (unsigned int i = 1; i < ret.size(); i++)
     {
       //if (ret[i].Score > ret[0].Score * 0.3)
-      if (ret[i].Score > 0.03)
+      if (ret[i].Score > 0.015)
         find_loop = true;
     }
   /*
@@ -383,12 +383,12 @@ int PoseGraph::detectLoop(KeyFrame *keyframe, int frame_index)
         cv::waitKey(20);
     }
   */ 
-  if (find_loop && frame_index > 50)
+  if (find_loop && frame_index > 10)
   {
     int min_index = -1;
     for (unsigned int i = 0; i < ret.size(); i++)
     {
-      if (min_index == -1 || (ret[i].Id < min_index && ret[i].Score > 0.03))
+      if (min_index == -1 || (ret[i].Id < min_index && ret[i].Score > 0.015))
         min_index = ret[i].Id;
     }
     return min_index;
