@@ -39,7 +39,7 @@ projection_parameters:
 #   cy: 2.5476941553631312e+02
 
 # Extrinsic parameter between IMU and Camera.
-estimate_extrinsic: 1   # 0  Have an accurate extrinsic parameters. We will trust the following imu^R_cam, imu^T_cam, don't change it.
+estimate_extrinsic: 0   # 0  Have an accurate extrinsic parameters. We will trust the following imu^R_cam, imu^T_cam, don't change it.
                         # 1  Have an initial guess about extrinsic parameters. We will optimize around your initial guess.
                         # 2  Don't know anything about extrinsic parameters. You don't need to give R,T. We will try to calibrate it. Do some rotation movement at beginning.                        
 #If you choose 0 or 1, you should write down the following matrix.
@@ -79,10 +79,10 @@ keyframe_parallax: 10.0 # keyframe selection threshold (pixel)
 #gyr_w: 0.000379565782927       # gyroscope bias random work noise standard deviation.     #4.0e-5
 
 #imu parameters       The more accurate parameters you provide, the better performance
-acc_n: 0.1          # accelerometer measurement noise standard deviation. #0.2   0.04
-gyr_n: 0.01         # gyroscope measurement noise standard deviation.     #0.05  0.004
-acc_w: 0.001        # accelerometer bias random work noise standard deviation.  #0.02
-gyr_w: 0.0001       # gyroscope bias random work noise standard deviation.     #4.0e-5
+acc_n: 0.2          # accelerometer measurement noise standard deviation. #0.2   0.04
+gyr_n: 0.05         # gyroscope measurement noise standard deviation.     #0.05  0.004
+acc_w: 0.002        # accelerometer bias random work noise standard deviation.  #0.02
+gyr_w: 0.0004       # gyroscope bias random work noise standard deviation.     #4.0e-5
 
 g_norm: 9.81007     # gravity magnitude
 

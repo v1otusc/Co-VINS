@@ -1,5 +1,5 @@
 #!/bin/bash
-# open mynteye camera: modified file path plz
+# open mynteye camera: modify file path plz
 cd /home/nvidia/MYNT-EYE-S-SDK-master/wrappers/ros/
 source ./devel/setup.bash
 {
@@ -7,7 +7,7 @@ source ./devel/setup.bash
 }&
 
 sleep 10s
-# launch covins master.launch: modified file path plz
+# launch covins master.launch: modify file path plz
 cd /home/nvidia/covins/
 source ./devel/setup.bash
 {
