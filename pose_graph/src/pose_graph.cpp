@@ -369,11 +369,11 @@ int PoseGraph::detectLoop(KeyFrame *keyframe, int frame_index)
   cv::Mat loop_result;
 
   // a good match with its nerghbour
-  if (ret.size() >= 1 && ret[0].Score > 0.05)
+  if (ret.size() >= 1 && ret[0].Score > 0.1)
     for (unsigned int i = 1; i < ret.size(); i++)
     {
       //if (ret[i].Score > ret[0].Score * 0.3)
-      if (ret[i].Score > 0.015)
+      if (ret[i].Score > 0.03)
         find_loop = true;
     }
   /*
@@ -388,7 +388,7 @@ int PoseGraph::detectLoop(KeyFrame *keyframe, int frame_index)
     int min_index = -1;
     for (unsigned int i = 0; i < ret.size(); i++)
     {
-      if (min_index == -1 || (ret[i].Id < min_index && ret[i].Score > 0.015))
+      if (min_index == -1 || (ret[i].Id < min_index && ret[i].Score > 0.03))
         min_index = ret[i].Id;
     }
     return min_index;
