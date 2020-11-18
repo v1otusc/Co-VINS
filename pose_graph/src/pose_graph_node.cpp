@@ -193,7 +193,7 @@ void command()
 void odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
 {
   // Mesh model
-  //ROS_INFO("odometry callback");
+  // ROS_INFO("odometry callback");
   int sequence = std::stoi(msg->child_frame_id);
   Quaterniond q(msg->pose.pose.orientation.w,
                 msg->pose.pose.orientation.x,

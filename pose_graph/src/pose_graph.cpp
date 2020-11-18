@@ -32,10 +32,12 @@ void PoseGraph::loadVocabulary(std::string voc_path)
   db.setVocabulary(*voc, false, 0);
 }
 
+// 需要注意，这是所有子端 KeyFrame 的统一入口
 void PoseGraph::addAgentFrame(KeyFrame *cur_kf)
 {
   cur_kf->index = global_index;
   int sequence = cur_kf->sequence;
+  // 如果是新加入的 sequence
   if (!sequence_align_world.count(sequence))
   {
     // 将第一个接收到的 sequence 设置为 world frame

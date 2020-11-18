@@ -37,6 +37,7 @@ int FeatureManager::getFeatureCount()
   return cnt;
 }
 
+// 检查视差，根据返回 bool 类型判断是否为关键帧
 bool FeatureManager::addFeatureCheckParallax(int frame_count, const map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>> &image, double td)
 {
   ROS_DEBUG("input feature: %d", (int)image.size());
@@ -65,6 +66,9 @@ bool FeatureManager::addFeatureCheckParallax(int frame_count, const map<int, vec
     }
   }
 
+  // fusion 
+  //   ||
+  // if (frame_count < 2 || last_track_num < 20 || long_track_num < 40 || new_feature_num > 0.5 * last_track_num)
   if (frame_count < 2 || last_track_num < 20)
     return true;
 
