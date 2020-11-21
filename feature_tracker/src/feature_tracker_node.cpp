@@ -278,7 +278,7 @@ int main(int argc, char **argv)
     }
   }
 
-  // 订阅相机的
+  // 订阅相机发布的图像 topic
   ros::Subscriber sub_img = n.subscribe(IMAGE_TOPIC, 100, img_callback);
   // 跟踪的特征点信息，由 /vins_estimator 订阅并进行优化
   pub_img = n.advertise<sensor_msgs::PointCloud>("feature_tracker/feature", 1000);

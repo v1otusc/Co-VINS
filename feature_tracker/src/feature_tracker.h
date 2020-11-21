@@ -51,9 +51,13 @@ class FeatureTracker
     // cur_img 表示前一帧，是光流跟踪前一帧的图像数据
     // forw_img 表示当前帧，是光流跟踪后一帧的图像数据
     cv::Mat prev_img, cur_img, forw_img;
+    // 每一帧中通过 cv::goodFeaturesToTrack() 新提取到的特征点
     vector<cv::Point2f> n_pts;
+    // 与 prev_img cur_img forw_img 对应的图像特征点
     vector<cv::Point2f> prev_pts, cur_pts, forw_pts;
+    // 
     vector<cv::Point2f> prev_un_pts, cur_un_pts;
+    // 
     vector<cv::Point2f> pts_velocity;
     // 能够被跟踪到的特征点的 id
     vector<int> ids;
@@ -61,6 +65,7 @@ class FeatureTracker
     vector<int> track_cnt;
     map<int, cv::Point2f> cur_un_pts_map;
     map<int, cv::Point2f> prev_un_pts_map;
+    // 相机模型
     camodocal::CameraPtr m_camera;
     double cur_time;
     double prev_time;

@@ -438,7 +438,9 @@ int main(int argc, char **argv)
    ros::NodeHandle n;
    ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Info);
    std::string config_file;
+   // 这句话看来是有点多余，readParameters(n) 中已经带有读取 param 为 config_file 的功能了
    n.getParam("config_file", config_file);
+   // 读取参数，设置状态估计器参数
    readParameters(n);
    estimator.setParameter();
 #ifdef EIGEN_DONT_PARALLELIZE
@@ -446,6 +448,7 @@ int main(int argc, char **argv)
 #endif
    ROS_WARN("waiting for image and imu...");
 
+   // 用于 rviz 显示的 topic 
    registerPub(n);
 
    ros::Subscriber sub_imu = n.subscribe(IMU_TOPIC, 2000, imu_callback, ros::TransportHints().tcpNoDelay());
@@ -453,6 +456,7 @@ int main(int argc, char **argv)
    ros::Subscriber sub_restart = n.subscribe("feature_tracker/restart", 2000, restart_callback);
    ros::Subscriber sub_relo_points = n.subscribe("/pose_graph/match_points", 2000, relocalization_callback);
 
+   // 创建 vio 主线程
    std::thread measurement_process{process};
    ros::Subscriber sub_image;
    std::thread agent_process_thread;
